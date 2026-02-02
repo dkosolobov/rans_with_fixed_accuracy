@@ -8,3 +8,23 @@ The encoders are tested on sequences of length 64K with byte alphabets (0-255) g
 The results show that the encoding of the rANS with accuracy 3 is faster than the standard rANS but slower than the optimized variant (rans-fast). 
 This suggests that the rANS with accuracy 3 might be used as an adaptive rANS (when it is impossible to precompute constants for fast divisions).
 However, the rANS with accuracy 3 has slower decoding, so, it makes sense to apply it only if the fast encoding is the primary goal.
+
+| Entropy encoder | Comp/decomp time |Encoding bytes|
+|-----------------|------------------|-----|
+|Geometric distribution p = 0.3            |
+|------------------------------------------|
+|rANS with acc 3: |241500/408800 ns, |10366|
+|rANS:            |305700/285500 ns, |10364|
+|rANS fast:       |182500/284400 ns, |10364|
+|------------------------------------------|
+|Geometric distribution p = 0.3            |
+|------------------------------------------|
+|rANS with acc 3: |235600/407200 ns, |24117|
+|rANS:            |292900/275600 ns, |24112|
+|rANS fast:       |185700/276900 ns, |24112|
+|------------------------------------------|
+|Uniform distribution                      |
+|------------------------------------------|
+|rANS with acc 3: |235500/398400 ns, |65521|
+|rANS:            |257000/256000 ns, |65516|
+|rANS fast:       |152200/256600 ns, |65516|
