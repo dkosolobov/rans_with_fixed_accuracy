@@ -3,10 +3,10 @@
 #include <stdint.h>
 
 #include "sym-stats.h"
-#include "rans-fixed-accuracy.h"
+#include "rans-fixed-accuracy-2.h"
 
 static constexpr int STATE_BITS = 14;	//16;
-static constexpr int ACCURACY_BITS = 3;	// hardcoded and after change first calls to div_high should be removed/added
+static constexpr int ACCURACY_BITS = 2;	// hardcoded and after change first calls to div_high should be removed/added
 static constexpr int ALL_BITS = STATE_BITS + ACCURACY_BITS;
 static constexpr int ACCURACY_MASK = (1 << (ACCURACY_BITS + 1)) - 1;
 static constexpr int STATE_MASK = (1 << STATE_BITS) - 1;
@@ -43,7 +43,7 @@ static inline void div_high(uint32_t freq, uint32_t& x, uint32_t& rem, int rem_b
 	rem |= x_sub & (1 << (rem_bit + ALL_BITS));
 }
 
-static inline uint32_t encode_symbol(const EncSymInfo& sym_inf, uint32_t x, uint64_t& output_word, uint8_t& ptr) {
+static inline uint32_t encode_symbol(const EncSymInfo_2& sym_inf, uint32_t x, uint64_t& output_word, uint8_t& ptr) {
 	uint32_t cumm_freq = sym_inf.cumm_freq;
 	uint32_t freq = sym_inf.freq;
 	uint32_t delta = sym_inf.delta;
@@ -53,15 +53,15 @@ static inline uint32_t encode_symbol(const EncSymInfo& sym_inf, uint32_t x, uint
 	x -= freq << ACCURACY_BITS;
 
 	uint32_t rem = 0;
-	static_assert(ACCURACY_BITS == 3, "To increase/decrease accuracy, more/less div_high should be invoked");
-	div_high(freq, x, rem, 2);
+	static_assert(ACCURACY_BITS == 2, "To increase/decrease accuracy, more/less div_high should be invoked");
+	//div_high(freq, x, rem, 2);
 	div_high(freq, x, rem, 1);
 	div_high(freq, x, rem, 0);
 	rem = (rem ^ (ACCURACY_MASK << ALL_BITS)) >> ACCURACY_BITS;
 	return x + cumm_freq + rem;
 }
 
-int encode_rANS_with_accuracy_3(const std::vector<uint8_t>& sequence, std::vector<uint8_t>& output, const std::vector<EncSymInfo>& sym_table) {
+int encode_rANS_with_accuracy_2(const std::vector<uint8_t>& sequence, std::vector<uint8_t>& output, const std::vector<EncSymInfo_2>& sym_table) {
 	uint32_t x = 1 << ALL_BITS;
 	uint64_t output_word = 0;
 	uint8_t ptr = 0;		// bit pointer inside the output_word
@@ -90,7 +90,7 @@ int encode_rANS_with_accuracy_3(const std::vector<uint8_t>& sequence, std::vecto
 // Initialization
 //
 
-SequenceInfo init_rANS_with_accuracy_3(const std::vector<uint8_t>& sequence) {
+SequenceInfo_2 init_rANS_with_accuracy_2(const std::vector<uint8_t>& sequence) {
 	SymbolStats stats;
 	stats.count_freqs(sequence.data(), sequence.size());
 	stats.normalize_freqs(1 << STATE_BITS);
@@ -100,8 +100,8 @@ SequenceInfo init_rANS_with_accuracy_3(const std::vector<uint8_t>& sequence) {
 		for (uint32_t i = stats.cum_freqs[s]; i < stats.cum_freqs[s + 1]; i++)
 			cum2sym[i] = s;
 
-	std::vector<EncSymInfo> esyms(256);
-	std::vector<DecSymInfo> dsyms(256);
+	std::vector<EncSymInfo_2> esyms(256);
+	std::vector<DecSymInfo_2> dsyms(256);
 
 	for (int j = 0; j < 256; j++) {
 		dsyms[j].freq = esyms[j].freq = stats.freqs[j];
@@ -117,12 +117,12 @@ SequenceInfo init_rANS_with_accuracy_3(const std::vector<uint8_t>& sequence) {
 // Decoding
 //
 
-static inline uint32_t read_bits(uint64_t& word, uint8_t& ptr, const uint8_t* RESTRICT & buffer_end, uint8_t count) {
+static inline uint32_t read_bits(uint64_t& word, uint8_t& ptr, const uint8_t* RESTRICT& buffer_end, uint8_t count) {
 	ptr -= count;
 	return (word >> ptr) & bit_masks[count];
 }
 
-static inline void read_buffer(uint64_t& word, uint8_t& ptr, const uint8_t* RESTRICT & buffer_end) {
+static inline void read_buffer(uint64_t& word, uint8_t& ptr, const uint8_t* RESTRICT& buffer_end) {
 	if (STATE_BITS > ptr) {
 		buffer_end -= 4;
 		uint32_t buf;
@@ -132,7 +132,7 @@ static inline void read_buffer(uint64_t& word, uint8_t& ptr, const uint8_t* REST
 	}
 }
 
-void decode_rANS(const DecSymInfo * dsyms_data, const uint8_t * cum2sym_data,
+void decode_rANS_2(const DecSymInfo_2* dsyms_data, const uint8_t* cum2sym_data,
 	const uint8_t* buffer_end, uint8_t* out_buf, uint8_t* out_end
 ) {
 	buffer_end -= 4;
@@ -158,4 +158,3 @@ void decode_rANS(const DecSymInfo * dsyms_data, const uint8_t * cum2sym_data,
 		read_buffer(input_word, ptr, buffer_end);
 	}
 }
-

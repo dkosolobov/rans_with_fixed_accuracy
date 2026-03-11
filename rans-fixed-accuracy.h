@@ -26,3 +26,4 @@ typedef struct {
 SequenceInfo init_rANS_with_accuracy_3(const std::vector<uint8_t>& sequence);
 int encode_rANS_with_accuracy_3(const std::vector<uint8_t>& sequence, std::vector<uint8_t>& buf, const std::vector<EncSymInfo>& esyms);
 void decode_rANS(const DecSymInfo* dsyms_data, const uint8_t* cum2sym_data, const uint8_t* buffer_end, uint8_t* out_buf, uint8_t* out_end);
+
